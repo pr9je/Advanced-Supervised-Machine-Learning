@@ -132,3 +132,9 @@ plt.figure(figsize=(10, 6))
 sns.heatmap(ct, annot=True, fmt="d", cmap="Blues")
 plt.title("Learner Count: Top Companies x Top Job Positions")
 plt.show()
+
+# Data Cleaning:
+
+df_clean = df.copy()
+print("Starting rows:", len(df_clean))
+
