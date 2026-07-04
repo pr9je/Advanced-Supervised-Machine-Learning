@@ -138,3 +138,9 @@ plt.show()
 df_clean = df.copy()
 print("Starting rows:", len(df_clean))
 
+# Invalid `orgyear` Handling.
+valid_year = df_clean["orgyear"].between(1980, 2021)
+invalid_count = (~valid_year & df_clean["orgyear"].notna()).sum()
+print(f"Invalid orgyear values found: {invalid_count} ({invalid_count/len(df_clean)*100:.2f}% of rows)")
+
+df_clean.loc[~valid_year, "orgyear"] = np.nan
