@@ -144,3 +144,10 @@ invalid_count = (~valid_year & df_clean["orgyear"].notna()).sum()
 print(f"Invalid orgyear values found: {invalid_count} ({invalid_count/len(df_clean)*100:.2f}% of rows)")
 
 df_clean.loc[~valid_year, "orgyear"] = np.nan
+
+
+# Missing Value Treatment
+df_clean["job_position"] = df_clean["job_position"].fillna("Unknown")
+df_clean["company_hash"] = df_clean["company_hash"].fillna("Unknown_Company")
+
+print(df_clean[["job_position", "company_hash", "orgyear"]].isna().sum())
