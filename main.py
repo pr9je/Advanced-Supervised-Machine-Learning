@@ -151,3 +151,155 @@ df_clean["job_position"] = df_clean["job_position"].fillna("Unknown")
 df_clean["company_hash"] = df_clean["company_hash"].fillna("Unknown_Company")
 
 print(df_clean[["job_position", "company_hash", "orgyear"]].isna().sum())
+
+
+# Outlier Treatment (CTC)
+
+LOWER_CTC, UPPER_CTC = 100_000, 15_000_000 # business-defined plausible ctc band (1L to 1.5Cr)
+
+n_low = (df_clean["ctc"] < LOWER_CTC).sum()
+n_high = (df_clean["ctc"] > UPPER_CTC).sum()
+
+print(f"Rows below plausible CTC floor: {n_low} ({n_low/len(df_clean)*100:.2f}%)")
+print(f"Rows above plausible CTC floor: {n_high} ({n_high/len(df_clean)*100:.2f}%)")
+
+df_clean["ctc"] = df_clean["ctc"].clip(lower=LOWER_CTC, upper=UPPER_CTC)
+
+# Visual check: CTC distribution after cleaning.
+
+fig, ax = plt.subplots(1, 2, figsize=(14,5) )
+sns.histplot(df_clean["ctc"], bins=100, ax=ax[0], color="#4C72B0")
+ax[0].set_title("CTC Distribution (after winsorizing)")
+sns.boxplot(x=df_clean["ctc"], ax=ax[1], color="#DD8452")
+ax[1].set_title("CTC Boxplot (after winsorizing)")
+plt.tight_layout(); plt.show()
+
+# Data Consistency Checks.
+
+print("Rows with CTC updated year before org year (impossible):",
+      (df_clean["ctc_updated_year"] < df_clean['orgyear']).sum())
+print("Negative or zero CTC:", (df_clean['ctc'] <= 0).sum())
+print("Final shape after cleaning:", df_clean.shape)
+df_clean.describe(include="all").T
+
+# Feature Engineering
+
+# year_of_experience
+
+df_clean['years_of_experience'] = df_clean['ctc_updated_year'] - df_clean['orgyear']
+df_clean.loc[df_clean['years_of_experience'] < 0, "years_of_experience"] = np.nan
+df_clean["years_of_experience"].describe()
+
+# Experience Bucker
+def bucket_experience(y):
+  if pd.isna(y):
+    return "Unknown"
+  if y < 2:
+    return "Fresher (0-2y)"
+  elif y < 5:
+    return "Junior (2-5y)"
+  elif y < 8:
+    return "Mid (5-8y)"
+  elif y < 12:
+    return "Senior (8-12y)"
+  else:
+    return "Veteran (12y+)"
+
+df_clean["experience_bucket"] = df_clean["years_of_experience"].apply(bucket_experience)
+df_clean["experience_bucket"].value_counts()
+
+
+# job_family and job_seniority
+
+def map_job_family(pos):
+  p = str(pos).lower()
+  if "lead" in p or "manager" in p or "director" in p or "head" in p:
+    return "Leadership"
+  if "data scientist" in p or "data analyst" in p or "analytics" in p:
+    return "Data"
+  if "qa" in p or "sdet" in p or "test" in p:
+    return "QA"
+  if "devops" in p or "sre" in p or "infra" in p or "cloud" in p:
+    return "DevOps/Infra"
+  if "desgin" in p:
+    return "Desgin"
+  if "support" in p:
+    return "Support"
+  if "intern" in p:
+    return "Intern"
+  if "backend" in p or "frontend" in p or "fullstack" in p or "android" in p or "ios" in p or "engineer" in p or "developer" in p:
+    return "Engineering"
+  if p in ("nan", "unknown"):
+    return "Unknown"
+  return "Other" 
+
+def map_job_seniority(pos):
+  p = str(pos).lower()
+  if "intern" in p:
+    return 0
+  if "lead" in p or "manager" in p or "director" in p or "head" in p or "leadership" in p:
+    return 3
+  if "senior" in p or "sr." in p or "sr" in p:
+    return 2
+  if p in ("nan", "unknown"):
+    return -1 # unknown seniority, kept distinct from fresher
+  return 1 # standard individual-contributor level.
+
+df_clean["job_family"] = df_clean["job_position"].apply(map_job_family)
+df_clean["job_seniority"] = df_clean["job_position"].apply(map_job_seniority)
+
+print(df_clean['job_family'].value_counts())
+print()
+print(df_clean['job_seniority'].value_counts()) 
+
+
+# company_employee_count, comapny_avg_ctc, company_tier
+company_stats = df_clean.groupby("company_hash", observed=True).agg(
+    company_employee_count = ("ctc", "size"),
+    company_avg_ctc_raw = ("ctc", "mean")
+)
+
+global_mean_ctc = df_clean["ctc"].mean()
+SHRINK_K = 10 # Shrinkage strength: companies with few samples pull towards global mean
+
+company_stats["company_avg_ctc"] =(
+    (company_stats["company_avg_ctc_raw"] * company_stats["company_employee_count"] + global_mean_ctc * SHRINK_K) /
+    (company_stats["company_employee_count"] + SHRINK_K)
+)
+
+# Tier by quartile of the shrunk average CTC (only meaningful for companies with a few learners)
+company_stats["company_tier"] = pd.qcut(
+    company_stats["company_avg_ctc"], q=4,
+    labels=["Tier 4 (Lower pay)", "Tier 3", "Tier 2", "Tier 1 (Top pay)"] 
+)
+
+df_clean = df_clean.merge(
+    company_stats[["company_employee_count", "company_avg_ctc", "company_tier"]],left_on="company_hash", right_index=True, how="left"
+)
+df_clean[["company_employee_count", "company_avg_ctc", "company_tier"]].describe(include="all")
+
+
+# Top_company_flag
+df_clean["top_company_flag"] = (df_clean["company_tier"] == "Tier 1 (Top pay)").astype(int)
+df_clean["top_company_flag"].value_counts()
+
+# Avg_salary_by_role, median_salary, salary_percentile, salary_band, high_salary_flag.
+
+role_avg_ctc = df_clean.groupby("job_position", observed=True)["ctc"].transform("mean")
+df_clean["avg_salary_by_role"] = role_avg_ctc
+
+df_clean["median_salary"] = df_clean["ctc"].median() #global reference point, used for salary bands below
+df_clean["salary_percentile"] = df_clean["ctc"].rank(pct=True) *100
+
+df_clean["salary_band"] = pd.qcut(
+    df_clean["ctc"], q=4, labels=["Low", "Medium", "High", "Very High"]
+)
+
+df_clean["high_salary_flag"] = (df_clean["salary_percentile"] >= 75).astype(int)
+
+df_clean[["avg_salary_by_role", "salary_percentile", "salary_band", "high_salary_flag"]].describe(include="all")
+
+
+# Role_Frequency
+df_clean["role_frequency"] = df_clean.groupby("job_position", observed=True)["job_position"].transform("count")
+df_clean["role_frequency"].describe()
