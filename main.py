@@ -303,3 +303,15 @@ df_clean[["avg_salary_by_role", "salary_percentile", "salary_band", "high_salary
 # Role_Frequency
 df_clean["role_frequency"] = df_clean.groupby("job_position", observed=True)["job_position"].transform("count")
 df_clean["role_frequency"].describe()
+
+
+# Company_Growth
+
+median_year = df_clean["orgyear"].median()
+recent = df_clean[df_clean["orgyear"] >= median_year].groupby("company_hash", observed=True).size()
+older = df_clean[df_clean["orgyear"] < median_year].groupby("company_hash", observed=True).size()
+
+growth = ((recent - older) / (recent + older).replace(0, np.nan)).rename("company_growth_proxy")
+df_clean = df_clean.merge(growth, left_on="company_hash", right_index=True, how="left")
+df_clean["company_growth_proxy"] = df_clean["company_growth_proxy"].fillna(0)
+df_clean["company_growth_proxy"].describe()
