@@ -315,3 +315,14 @@ growth = ((recent - older) / (recent + older).replace(0, np.nan)).rename("compan
 df_clean = df_clean.merge(growth, left_on="company_hash", right_index=True, how="left")
 df_clean["company_growth_proxy"] = df_clean["company_growth_proxy"].fillna(0)
 df_clean["company_growth_proxy"].describe()
+
+# Promotion_Flag
+
+multi = df_clean.sort_values(["email_hash", "ctc_updated_year"])
+multi["ctc_prev"] = multi.groupby("email_hash")["ctc"].shift(1)
+multi["promotion_flag"] = ((multi["ctc_prev"].notna()) & (multi["ctc"] > multi["ctc_prev"])).astype(int)
+df_clean = multi.drop(columns=["ctc_prev"])
+
+print(df_clean["promotion_flag"].value_counts())
+print(f"Promotion rate among learners with a prior record: "
+      f"{df_clean.loc[df_clean.duplicated('email_hash', keep=False), 'promotion_flag'].mean()*100:.1f}%")
