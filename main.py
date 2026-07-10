@@ -326,3 +326,26 @@ df_clean = multi.drop(columns=["ctc_prev"])
 print(df_clean["promotion_flag"].value_counts())
 print(f"Promotion rate among learners with a prior record: "
       f"{df_clean.loc[df_clean.duplicated('email_hash', keep=False), 'promotion_flag'].mean()*100:.1f}%")
+
+
+# Preprocessing 
+
+
+cluster_features_raw = ['ctc','years_of_experience', 'job_seniority', 
+                        'company_avg_ctc', 'comapny_employee_count']
+
+df_model = df_clean.dropna(subset=['years_of_experience', 'ctc', 'company_avg_ctc']).copy()
+print(f"Rows availabel for clustering: {len(df_model)} / {len(df_clean)}"
+        f"({len(df_model)/len(df_clean)*100:.1f}% retained)")
+
+# Log transform the three heavliy right-skewed numeric features.
+df_model['log_ctc'] = np.log1p(df_model['ctc'])
+df_model['log_company_avg_ctc'] = np.log1p(df_model['company_avg_ctc'])
+df_model['log_company_employee_count'] = np.log1p(df_model['company_employee_count'])
+
+model_feature_cols = ['log_ctc', 'log_company_avg_ctc', 'log_company_employee_count','log_company_employee_count']
+X = df_model[model_feature_cols].copy()
+X.describe()
+
+
+
