@@ -355,5 +355,39 @@ X_scaled_df = pd.DataFrame(X_scaled, columns=model_feature_cols, index=X.index)
 X_scaled_df.describe().round(2)
 
 
+# Clustering Tendency - Hopkins Statistic
+
+def hopkins_statistic(X, sample_ratio=0.05, random_state=RANDOM_STATE):
+    """Compute the Hopkins statistic for clustering tendency.
+    Uses a sample of the data (this dataset is too large to compute on all 200K+ rows at once)
+    and compares nearest-neighbor distances of real points vs. uniformly-random points.
+    """
+    rng = np.random.RandomState(random_state)
+    n = X.shape[0]
+    m = max(int(sample_ratio * n), 50)
+    m = min(m, 2000)  # cap for tractability
+
+    nbrs = NearestNeighbors(n_neighbors=2).fit(X)
+
+    # (a) sample m real points, distance to their nearest OTHER real point
+    real_idx = rng.choice(n, m, replace=False)
+    real_sample = X[real_idx]
+    u_distances, _ = nbrs.kneighbors(real_sample, n_neighbors=2)
+    u_distances = u_distances[:, 1]  # skip distance-to-self
+
+    # (b) sample m uniformly random points within the data's bounding box,
+    #     distance to their nearest REAL point
+    mins, maxs = X.min(axis=0), X.max(axis=0)
+    random_points = rng.uniform(mins, maxs, size=(m, X.shape[1]))
+    w_distances, _ = nbrs.kneighbors(random_points, n_neighbors=1)
+    w_distances = w_distances[:, 0]
+
+    H = w_distances.sum() / (w_distances.sum() + u_distances.sum())
+    return H
+
+hopkins_score = hopkins_statistic(X_scaled)
+print(f"Hopkins Statistic: {hopkins_score:.3f}")
+
+
 
 
