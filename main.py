@@ -348,4 +348,12 @@ X = df_model[model_feature_cols].copy()
 X.describe()
 
 
+# Scaling
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+X_scaled_df = pd.DataFrame(X_scaled, columns=model_feature_cols, index=X.index)
+X_scaled_df.describe().round(2)
+
+
+
 
