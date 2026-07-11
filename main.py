@@ -390,4 +390,13 @@ print(f"Hopkins Statistic: {hopkins_score:.3f}")
 
 
 
+# Sanity check: compute Hopkins on genuinely random (uniform) data of the same shape, for comparison.
+
+rng = np.random.RandomState(RANDOM_STATE)
+random_baseline = rng.uniform(X_scaled.min(axis=0), X_scaled.max(axis=0), size=X_scaled.shape)
+hopkins_random = hopkins_statistic(random_baseline)
+print(f"Hoplins Statistic on scaled data: {hopkins_score:.3f}")
+print(f"Hoplins Statistic on random data: {hopkins_random:.3f} (expect~0.5)")
+
+
 
