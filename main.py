@@ -398,5 +398,21 @@ hopkins_random = hopkins_statistic(random_baseline)
 print(f"Hoplins Statistic on scaled data: {hopkins_score:.3f}")
 print(f"Hoplins Statistic on random data: {hopkins_random:.3f} (expect~0.5)")
 
+# K-Means Clustering.
+
+## Elbow Method.
+wcss = []
+
+k_range = range(2,11)
+for k in k_range:
+  mbk = MiniBatchKMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10, batch_size=2048)
+  mbk.fit(X_scaled)
+  wcss.append(mbk.inertia_)
+
+plt.figure(figsize=(9,5))
+plt.plot(list(k_range), wcss, marker='o', color="#4C72B0")
+plt.title("Elbow Method - WCSS vs. Number of Clusters (k)")
+plt.xlabel("k (number of clusters)"); plt.ylabel("WCSS (Intertia)")
+plt.show()
 
 
