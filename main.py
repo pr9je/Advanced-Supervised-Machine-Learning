@@ -416,3 +416,22 @@ plt.xlabel("k (number of clusters)"); plt.ylabel("WCSS (Intertia)")
 plt.show()
 
 
+## Silhouette Score
+
+sil_scores = {}
+for k in k_range:
+    mbk = MiniBatchKMeans(n_clusters=k, random_state=RANDOM_STATE, n_init=10, batch_size=2048)
+    labels_k = mbk.fit_predict(X_scaled)
+    sil_scores[k] = silhouette_score(X_scaled, labels_k, sample_size=5000, random_state=RANDOM_STATE)
+
+plt.figure(figsize=(9, 5))
+plt.plot(list(sil_scores.keys()), list(sil_scores.values()), marker="o", color="#DD8452")
+plt.title("Silhouette Score vs. Number of Clusters (k)")
+plt.xlabel("k (number of clusters)"); plt.ylabel("Silhouette Score (sampled, n=5000)")
+plt.xticks(list(k_range))
+plt.show()
+
+for k, s in sil_scores.items():
+    print(f"k={k}: silhouette = {s:.3f}")
+
+
