@@ -447,3 +447,11 @@ df_model["kmeans_cluster"] = kmeans_final.fit_predict(X_scaled)
 
 df_model["kmeans_cluster"].value_counts().sort_index
 
+# Evaluation.
+
+kmeans_sil = silhouette_score(X_scaled, df_model["kmeans_cluster"], sample_size=8000, random_state=RANDOM_STATE)
+kmeans_db = davies_bouldin_score(X_scaled, df_model["kmeans_cluster"])
+kmeans_ch = calinski_harabasz_score(X_scaled, df_model["kmeans_cluster"])
+
+print(f"K-Means (k={best_k}) — Silhouette: {kmeans_sil:.3f} | "
+      f"Davies-Bouldin: {kmeans_db:.3f} (lower better) | Calinski-Harabasz: {kmeans_ch:.0f} (higher better)")
