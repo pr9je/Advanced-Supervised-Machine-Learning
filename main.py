@@ -455,3 +455,11 @@ kmeans_ch = calinski_harabasz_score(X_scaled, df_model["kmeans_cluster"])
 
 print(f"K-Means (k={best_k}) — Silhouette: {kmeans_sil:.3f} | "
       f"Davies-Bouldin: {kmeans_db:.3f} (lower better) | Calinski-Harabasz: {kmeans_ch:.0f} (higher better)")
+
+
+# Visualization - PCA projection of clusters.
+
+pca = PCA(n_components=2, random_state=RANDOM_STATE)
+pca_coords = pca.fit_transform(X_scaled)
+df_model["pca_1"] = pca_coords[:,0]
+df_model["pca_2"] = pca_coords[:,1]
