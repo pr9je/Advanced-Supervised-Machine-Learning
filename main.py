@@ -435,3 +435,15 @@ for k, s in sil_scores.items():
     print(f"k={k}: silhouette = {s:.3f}")
 
 
+best_k = max(sil_scores, key=sil_scores.get)
+# Business override: cap at a usable number of segments even if a larger k scores marginally higher
+if best_k > 6:
+    best_k = max({k: v for k, v in sil_scores.items() if k <= 6}, key=lambda k: sil_scores[k])
+print(f"Selected k = {best_k} (silhouette = {sil_scores[best_k]:.3f})")
+
+# Training the Final Model
+kmeans_final = KMeans(n_clusters=best_k, random_state=RANDOM_STATE, n_init=20)
+df_model["kmeans_cluster"] = kmeans_final.fit_predict(X_scaled)
+
+df_model["kmeans_cluster"].value_counts().sort_index
+
