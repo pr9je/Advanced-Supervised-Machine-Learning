@@ -463,3 +463,16 @@ pca = PCA(n_components=2, random_state=RANDOM_STATE)
 pca_coords = pca.fit_transform(X_scaled)
 df_model["pca_1"] = pca_coords[:,0]
 df_model["pca_2"] = pca_coords[:,1]
+
+print(f"Variance explained by PC1: {pca.explained_variance_ratio_[0]*100:.1f}%")
+print(f"Variance explained by PC2: {pca.explained_variance_ratio_[1]*100:.1f}%")
+print(f"Total variance explained by 2 components: {pca.explained_variance_ratio_.sum()*100:.1f}%")
+
+plt.figure(figsize=(9, 7))
+sample_plot = df_model.sample(min(15000, len(df_model)), random_state=RANDOM_STATE)
+sns.scatterplot(data=sample_plot, x="pca_1", y="pca_2", hue="kmeans_cluster",
+                 palette="tab10", alpha=0.4, s=15, legend="full")
+plt.title(f"K-Means Clusters (k={best_k}) — PCA 2D Projection (15K point sample)")
+plt.xlabel("Principal Component 1"); plt.ylabel("Principal Component 2")
+plt.legend(title="Cluster", bbox_to_anchor=(1.02, 1), loc="upper left")
+plt.tight_layout(); plt.show()
