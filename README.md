@@ -11,3 +11,5 @@
   2. **Unfocuded marketing/outreach** — without segemnts, Scaler cannot target messaging (e.g. "switch to a product company", "get into a leadership track") to right audience.
   3. **No outcome benchmarking** — learners can't be told "people like you typically earns X after this course" without a notion of "people like you"
   4. **Inefficient mentor/mentee matching** — mentors are most useful when mateched to learners in a similar or one-step-ahead-sgement.
+
+
