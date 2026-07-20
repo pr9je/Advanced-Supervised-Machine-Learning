@@ -487,3 +487,15 @@ df_hc_sample = df_model.groupby("kmeans_cluster", group_keys=False)[df_model.col
 X_hc = X_scaled_df.loc[df_hc_sample.index].values
 print(f"Hierarchical clustering sample size: {len(df_hc_sample)} rows")
 print(df_hc_sample["kmeans_cluster"].value_counts(normalize=True).round(3))
+
+
+# Linkage Matrix and Dendrogram 
+Z = linkage(X_hc, method="ward")
+
+plt.figure(figsize=(14, 6))
+dendrogram(Z, truncate_mode="lastp", p=30, leaf_rotation=90, leaf_font_size=9, show_contracted=True)
+plt.title("Hierarchical Clustering Dendrogram (Ward linkage, truncated to last 30 merges)")
+plt.xlabel("Cluster size (or sample index)"); plt.ylabel("Ward Distance")
+plt.axhline(y=Z[-(best_k-1), 2], color="red", linestyle="--", label=f"Cut for k={best_k}")
+plt.legend()
+plt.show()
