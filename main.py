@@ -499,3 +499,16 @@ plt.xlabel("Cluster size (or sample index)"); plt.ylabel("Ward Distance")
 plt.axhline(y=Z[-(best_k-1), 2], color="red", linestyle="--", label=f"Cut for k={best_k}")
 plt.legend()
 plt.show()
+
+
+# Agglomerative Clustering 
+agg = AgglomerativeClustering(n_clusters=best_k, linkage="ward")
+df_hc_sample = df_hc_sample.copy()
+df_hc_sample["hc_cluster"] = agg.fit_predict(X_hc)
+
+hc_sil = silhouette_score(X_hc, df_hc_sample["hc_cluster"])
+hc_db = davies_bouldin_score(X_hc, df_hc_sample["hc_cluster"])
+hc_ch = calinski_harabasz_score(X_hc, df_hc_sample["hc_cluster"])
+
+print(f"Hierarchical (k={best_k}, sample n={len(df_hc_sample)}) — "
+      f"Silhouette: {hc_sil:.3f} | Davies-Bouldin: {hc_db:.3f} | Calinski-Harabasz: {hc_ch:.0f}")
