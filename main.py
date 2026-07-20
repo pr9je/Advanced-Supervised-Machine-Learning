@@ -476,3 +476,14 @@ plt.title(f"K-Means Clusters (k={best_k}) — PCA 2D Projection (15K point sampl
 plt.xlabel("Principal Component 1"); plt.ylabel("Principal Component 2")
 plt.legend(title="Cluster", bbox_to_anchor=(1.02, 1), loc="upper left")
 plt.tight_layout(); plt.show()
+
+# Hierarchical Clustering 
+
+SAMPLE_N = 3000
+sample_frac = SAMPLE_N / len(df_model)
+df_hc_sample = df_model.groupby("kmeans_cluster", group_keys=False)[df_model.columns].apply(
+    lambda g: g.sample(frac=sample_frac, random_state=RANDOM_STATE)
+)
+X_hc = X_scaled_df.loc[df_hc_sample.index].values
+print(f"Hierarchical clustering sample size: {len(df_hc_sample)} rows")
+print(df_hc_sample["kmeans_cluster"].value_counts(normalize=True).round(3))
